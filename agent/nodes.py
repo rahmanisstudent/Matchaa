@@ -129,7 +129,7 @@ _INDOBERT_LABELS = [
 ]
 
 def _classify_intent_indobert(user_input: str):
-    """Attempt local IndoBERT inference for intent classification. Falls back to None if unavailable."""
+    """Attempt IndoBERT inference. Download from Hugging Face if local files are missing."""
     global _INDOBERT_MODEL, _INDOBERT_TOKENIZER
     try:
         import torch
@@ -137,13 +137,17 @@ def _classify_intent_indobert(user_input: str):
         import torch.nn.functional as F
         
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        model_path = os.path.join(current_dir, "indobert_intent_model")
+        local_model_path = os.path.join(current_dir, "indobert_intent_model")
         
-        if not os.path.exists(model_path):
-            return None
+        # Jika file model lokal lengkap, gunakan lokal. Jika tidak, unduh dari Hugging Face Hub.
+        if os.path.exists(os.path.join(local_model_path, "model.safetensors")) or os.path.exists(os.path.join(local_model_path, "pytorch_model.bin")):
+            model_path = local_model_path
+        else:
+            # Ganti dengan path repositori Hugging Face Anda
+            model_path = os.environ.get("INDOBERT_HF_REPO", "username/matcha-indobert-intent")
             
         if _INDOBERT_MODEL is None or _INDOBERT_TOKENIZER is None:
-            print(f"Loading local IndoBERT intent classifier from {model_path}...")
+            print(f"Loading IndoBERT intent classifier from {model_path}...")
             _INDOBERT_TOKENIZER = AutoTokenizer.from_pretrained(model_path)
             _INDOBERT_MODEL = AutoModelForSequenceClassification.from_pretrained(model_path)
             _INDOBERT_MODEL.eval()
